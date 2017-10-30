@@ -36,7 +36,7 @@ public class SATSolverTest {
         Literal nc = c.getNegation();
 
         Graph g = new Graph(makeFm(makeCl(a,b)));
-
+        g.display();
 
         // Read the .cnf file and calls SATSolver.solve to determine the satisfiability
         if(args.length == 0) {
