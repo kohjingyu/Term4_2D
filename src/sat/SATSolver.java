@@ -60,17 +60,23 @@ public class SATSolver {
             // Pick arbitrary literal
             Literal l = smallest.chooseLiteral();
             Variable varToChange = l.getVariable();
-            Bool boolToSet = Bool.TRUE;
 
             // Substitute for it
             ImList<Clause> newClauses = substitute(clauses, l);
-            Environment newEnv = env.put(varToChange, boolToSet);
+            Environment newEnv = env.put(varToChange, Bool.TRUE);
+
+            if(l instanceof NegLiteral) {
+                // Set to false
+                newEnv = env.put(varToChange, Bool.FALSE);
+            }
+
             newEnv = solve(newClauses, newEnv);
-    
-            if(newEnv == null && clauses.size() > 1) {
+
+            // If more than one literal, set to FALSE if the first one fails
+            if(newEnv == null && smallest.size() > 1) {
                 // Fails, substitute False and solve recursively
                 newClauses = substitute(clauses, l.getNegation());
-                newEnv = env.put(varToChange, boolToSet.not());
+                newEnv = env.put(varToChange, Bool.FALSE);
                 newEnv = solve(newClauses, newEnv);
             }
 
