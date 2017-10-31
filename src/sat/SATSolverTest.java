@@ -70,7 +70,8 @@ public class SATSolverTest {
                             {
                                 numVariables = Integer.valueOf(splitted[2]);
                                 numClauses = Integer.valueOf(splitted[3]);
-                                clauses = new Clause[numClauses];
+                                clauses = new Clause[numClauses]; // Create an array of size 'numClauses'
+                                
                             }
                             else {
                                 throw new IOException("Invalid file provided");
