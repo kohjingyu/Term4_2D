@@ -28,11 +28,123 @@ public class SATSolver {
      *         null if no such environment exists.
      */
     public static Environment solve(Formula formula) {
-        // TODO: implement this.
+        // Initially use an environment where everything is true
         System.out.println(formula);
 
-        throw new RuntimeException("not yet implemented.");
+        Environment env = new Environment();        
+
+        Iterator<Clause> clauseIter = formula.iterator();
+        Clause c = clauseIter.next();
+        while(c != null)
+        {
+            Iterator<Literal> litIter = c.iterator();
+            Literal lit = litIter.next();
+            while(lit != null) {
+                env = env.putTrue(lit.getVariable());
+                lit = litIter.next();
+            }
+            c = clauseIter.next();
+        }
+
+        return solve(formula.getClauses(), env);
     }
+
+    /**
+     * Takes a partial assignment of variables to values, and recursively
+     * searches for a complete satisfying assignment.
+     * 
+     * @param clauses
+     *            formula in conjunctive normal form
+     * @param env
+     *            assignment of some or all variables in clauses to true or
+     *            false values.
+     * @return an environment for which all the clauses evaluate to Bool.TRUE,
+     *         or null if no such environment exists.
+     */
+    private static Environment solve(ImList<Clause> clauses, Environment env) {
+        if(clauses.isEmpty()) {
+            // No clauses, trivially satisfiable
+            return env;
+        }
+        else {
+            // Find smallest clause
+            Clause smallest = clauses.first(); // Initialize as first Clause
+
+            if(smallest.isEmpty()) return null;
+
+            // Iterate through all the other Clauses
+            for(Clause c : clauses.rest()) {
+                // If this is an empty Clause, fail and backtrack
+                if(c.isEmpty()) {
+                    // Unsatisfiable, fail and backtrack
+                    return null;
+                }
+                // Check if this Clause is smaller
+                else if(c.size() < smallest.size()) {
+                    // Set this to be the smallest
+                    smallest = c;
+                }
+            }
+
+            // work on smallest clause
+            // Pick arbitrary literal
+            Literal l = smallest.chooseLiteral();
+            Variable varToChange = l.getVariable();
+            Bool boolToSet = Bool.TRUE;
+
+            // If it is a negative literal, evaluate it using the NegLiteral's eval method instead
+            if(l instanceof NegLiteral) {
+                boolToSet = ((NegLiteral)l).eval(env);
+            }
+
+            // Substitute for it
+            ImList<Clause> newClauses = substitute(clauses, l);
+            Environment newEnv = env.put(varToChange, boolToSet);
+            Environment trueEnv = solve(newClauses, newEnv);
+
+            if(trueEnv == null && clauses.size() > 1) {
+                // Fails, substitute False and solve recursively
+                newEnv = env.put(varToChange, boolToSet.not());
+                return solve(newClauses, newEnv);
+            }
+            else {
+                // Works! Return
+                return trueEnv;
+            }
+        }
+    }
+
+    /**
+     * given a clause list and literal, produce a new list resulting from
+     * setting that literal to true
+     * 
+     * @param clauses
+     *            , a list of clauses
+     * @param l
+     *            , a literal to set to true
+     * @return a new list of clauses resulting from setting l to true
+     */
+    private static ImList<Clause> substitute(ImList<Clause> clauses,
+            Literal l) {
+        ImList<Clause> newClauses = clauses;
+        for (Clause c : clauses) {
+            // c is single variable clause
+            if(c.reduce(l) == null) {
+                newClauses = newClauses.remove(c);
+            }
+            else {
+                newClauses = newClauses.add(c.reduce(l));
+                newClauses = newClauses.remove(c);
+            }
+        }
+
+        return newClauses;
+    }
+
+    /**
+    * Solve the problem by taking a random walk in 2D. Not guarenteed to produce a correct answer,
+    * but usually does with high probability. Performs 100n^2 tries before giving up.
+    **/
 
     public static Environment solveRandom(Formula formula) {
         // Find all variables
@@ -112,39 +224,6 @@ public class SATSolver {
 
         // All clauses satisfied! Hooray!
         return env;
-    }
-
-    /**
-     * Takes a partial assignment of variables to values, and recursively
-     * searches for a complete satisfying assignment.
-     * 
-     * @param clauses
-     *            formula in conjunctive normal form
-     * @param env
-     *            assignment of some or all variables in clauses to true or
-     *            false values.
-     * @return an environment for which all the clauses evaluate to Bool.TRUE,
-     *         or null if no such environment exists.
-     */
-    private static Environment solve(ImList<Clause> clauses, Environment env) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
-    }
-
-    /**
-     * given a clause list and literal, produce a new list resulting from
-     * setting that literal to true
-     * 
-     * @param clauses
-     *            , a list of clauses
-     * @param l
-     *            , a literal to set to true
-     * @return a new list of clauses resulting from setting l to true
-     */
-    private static ImList<Clause> substitute(ImList<Clause> clauses,
-            Literal l) {
-        // TODO: implement this.
-        throw new RuntimeException("not yet implemented.");
     }
 
 }

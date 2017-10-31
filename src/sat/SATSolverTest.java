@@ -36,7 +36,7 @@ public class SATSolverTest {
         Literal nc = c.getNegation();
 
         SATSolver solverRand = new SATSolver();
-        System.out.println(solverRand.solveRandom(makeFm(makeCl(a,b),makeCl(a,c))));
+        System.out.println(solverRand.solve(makeFm(makeCl(a,b),makeCl(c,nb))));
 
         // Graph g = new Graph(makeFm(makeCl(a,b)));
         // g.display();
