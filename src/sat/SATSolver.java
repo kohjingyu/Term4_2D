@@ -1,6 +1,6 @@
 package sat;
 
-import immutable.ImList;
+import immutable.*;
 import sat.env.Environment;
 import sat.env.Bool;
 import sat.env.Variable;
@@ -9,6 +9,8 @@ import sat.formula.Formula;
 import sat.formula.Literal;
 import sat.formula.NegLiteral;
 
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -27,9 +29,9 @@ public class SATSolver {
      *         null if no such environment exists.
      */
     public static Environment solve(Formula formula) {
-        // Initially use an environment where everything is true
         Environment env = new Environment();
-        return solve(formula.getClauses(), env);
+
+        return solve(formula.sort(formula.getClauses()), env);
     }
 
     /**
@@ -51,9 +53,9 @@ public class SATSolver {
         }
         else {
             // Find smallest clause
-            Clause smallest = clauses.first(); // Initialize as first Clause
+            if(clauses.first().isEmpty()) return null;
 
-            if(smallest.isEmpty()) return null;
+            Clause smallest = clauses.first(); // Initialize as first Clause
 
             // Iterate through all the other Clauses
             for(Clause c : clauses.rest()) {
@@ -62,11 +64,7 @@ public class SATSolver {
                     // Unsatisfiable, fail and backtrack
                     return null;
                 }
-                // Check if this Clause is smaller
-                else if(c.size() < smallest.size()) {
-                    // Set this to be the smallest
-                    smallest = c;
-                }
+
             }
 
             // work on smallest clause
@@ -93,14 +91,16 @@ public class SATSolver {
                 // Fails, substitute False and solve recursively
                 newClauses = substitute(clauses, l.getNegation());
                 newEnv = env.put(varToChange, boolToSet.not());
-                return solve(newClauses, newEnv);
+
             }
-            else {
-                // Works! Return
-                return trueEnv;
-            }
+            return trueEnv;
+//            else {
+//                // Works! Return
+//                return trueEnv;
+//            }
         }
     }
+
 
     /**
      * given a clause list and literal, produce a new list resulting from
@@ -133,26 +133,44 @@ public class SATSolver {
     * but usually does with high probability. Performs 100n^2 tries before giving up.
     **/
 
-    public static Environment solveRandom(Formula formula) {
+    public static Environment solveRandom(Formula formula, int numVariables) {
         // Find all variables
-        Environment env = new Environment();        
+        Environment env = new Environment();
 
-        Iterator<Clause> clauseIter = formula.iterator();
-        Clause c = clauseIter.next();
-        while(c != null)
-        {
-            Iterator<Literal> litIter = c.iterator();
-            Literal lit = litIter.next();
-            while(lit != null) {
-                env = env.putFalse(lit.getVariable());
-                lit = litIter.next();
-            }
-            c = clauseIter.next();
-        }
+        // HashMap <Literal, ImList<Clause>> clauseMap = new HashMap<Literal, ImList<Clause>>();
+        // ArrayList<Clause> unsatClauses = new ArrayList<Clause>();
 
-        // System.out.println(env);
-        long maxTries = 1000000;//100 * env.getSize() * env.getSize();
-        System.out.println(maxTries);
+        // for(Clause c: formula.getClauses())
+        // {
+        //     Iterator<Literal> litIter = c.iterator();
+        //     Literal lit = litIter.next();
+        //     boolean satisfied = false;
+
+        //     while(lit != null) {
+        //         env = env.putFalse(lit.getVariable());
+        //         ImList<Clause> newClause = clauseMap.get(lit);
+
+        //         if(newClause == null) {
+        //             newClause = new EmptyImList<Clause>();
+        //         }
+
+        //         newClause = newClause.add(c);
+        //         clauseMap.put(lit, newClause);
+
+        //         // Since we default to false, negative literals are satisfied
+        //         if(lit instanceof NegLiteral) {
+        //             satisfied = true;
+        //         }
+
+        //         lit = litIter.next();
+        //     }
+
+        //     if(satisfied) {
+        //         unsatClauses.add(c);
+        //     }
+        // }
+
+        long maxTries = 100 * numVariables * numVariables;
         return SATSolver.randomWalkify(formula, env, maxTries);
     }
 
@@ -161,73 +179,93 @@ public class SATSolver {
         if(triesLeft <= 0) {
             return null;
         }
-        System.out.println(triesLeft);
-        
-        // Find unsatisfied clauses
-        Iterator<Clause> clauseIter = formula.iterator();
-        Clause c = clauseIter.next();
-        while(c != null)
-        {
-            // Check if clause is satisfied
-            Iterator<Literal> litIter = c.iterator();
-            Literal firstLit = litIter.next();
 
-            // Empty Clause - Unsolvable
-            if(firstLit == null) {
+        // Find unsatisfied clauses
+        ImList<Clause> unsatClauses = formula.getClauses();
+        for(Clause c: unsatClauses) {
+            Iterator<Literal> litIter = c.iterator();
+            Literal f = litIter.next();
+
+            if(f != null) {
+
+            }
+            else {
+                // Empty clause - unsolvable
                 return null;
             }
-
-            Variable firstVar = firstLit.getVariable();
-            Bool firstBool = firstVar.eval(env);
-
-            if(firstBool != Bool.TRUE) {
-                Literal secondLit = litIter.next();
-
-                Bool secondBool = Bool.FALSE;
-                Variable secondVar = null;
-
-                if(secondLit != null)
-                {
-                    secondVar = secondLit.getVariable();
-                    secondBool = secondVar.eval(env);
-                }
-
-                // If it is a negative literal, evaluate it using the NegLiteral's eval method instead
-                if(firstLit instanceof NegLiteral) {
-                    firstBool = ((NegLiteral)firstLit).eval(env);
-                }
-
-                if(secondLit instanceof NegLiteral) {
-                    secondBool = ((NegLiteral)secondLit).eval(env);
-                }
-
-                if(secondBool == Bool.TRUE) {
-                    // Clause is satisfied, move on
-                }
-                else {
-                    // Unsatisfied clause - change one variable randomly
-                    Variable varToChange = firstVar;
-
-                    // If this Clause has 2 variables, pick one at random to change
-                    if(secondLit != null) {
-                        Random rand = new Random();
-                        int randNum = rand.nextInt(2);
-
-                        if(randNum == 1) {
-                            varToChange = secondVar;
-                        }
-                    }
-
-                    // Try again with the new variable
-                    Environment newEnv = env.put(varToChange, firstBool.not());
-                    return randomWalkify(formula, newEnv, triesLeft - 1);
-                }
-
-            c = clauseIter.next();
         }
 
-        // All clauses satisfied! Hooray!
-        return env;
+        // Find unsatisfied clauses
+        ImList<Clause> clauses = unsatClauses; // TODO: Remove
+        Clause c = clauses.first(); // Guarenteed to have at least one literal
+
+        Iterator<Literal> litIter = c.iterator();
+        if(clauses.size() == 0) {
+            // All clauses satisfied! Hooray!
+            return env;
+        }
+
+        Literal firstLit = litIter.next();
+
+        Variable firstVar = firstLit.getVariable();
+        Bool firstBool = firstVar.eval(env);
+
+        Literal secondLit = litIter.next();
+
+        Bool secondBool = Bool.FALSE;
+        Variable secondVar = null;
+
+        if(secondLit != null)
+        {
+            secondVar = secondLit.getVariable();
+            secondBool = secondVar.eval(env);
+        }
+
+        // If it is a negative literal, evaluate it using the NegLiteral's eval method instead
+        if(firstLit instanceof NegLiteral) {
+            firstBool = ((NegLiteral)firstLit).eval(env);
+        }
+
+        if(firstBool == Bool.UNDEFINED) {
+            firstBool = Bool.FALSE;
+            env = env.put(firstVar, Bool.FALSE);
+        }
+
+        if(secondLit instanceof NegLiteral) {
+            secondBool = ((NegLiteral)secondLit).eval(env);
+        }
+
+        if(secondBool == Bool.UNDEFINED) {
+            secondBool = Bool.FALSE;
+            env = env.put(secondVar, Bool.FALSE);
+        }
+
+        // Unsatisfied clause - change one variable randomly
+        Variable varToChange = firstVar;
+        Literal literalToChange = firstLit;
+        Bool boolToSet = firstBool.not();
+
+        // If this Clause has 2 variables, pick one at random to change
+        if(secondLit != null) {
+            Random rand = new Random();
+            int randNum = rand.nextInt(2);
+
+            if(randNum == 1) {
+                varToChange = secondVar;
+                literalToChange = secondLit;
+                boolToSet = secondBool.not();
+            }
+        }
+
+        return randomWalkify(formula, env, triesLeft - 1);
+
+        // Iterator<Clause> clauseIter = formula.iterator();
+        // Clause c = clauseIter.next();
+        // while(c != null)
+        // {
+
+        //     c = clauseIter.next();
+        // }
     }
 
 }

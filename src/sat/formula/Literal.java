@@ -6,7 +6,7 @@
  */
 package sat.formula;
 
-import sat.env.Variable;
+import sat.env.*;
 
 /**
  * A class to represent literals used in clausal form.
@@ -44,6 +44,15 @@ public abstract class Literal {
     
     Literal (Variable var) {
         this.var = var;
+    }
+
+    public Bool eval (Environment e) {
+        if(this instanceof PosLiteral) {
+            return e.get(this.getVariable());
+        }
+        else {
+            return ((NegLiteral)this).eval(e);
+        }
     }
 
     /**
