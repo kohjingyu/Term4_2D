@@ -35,9 +35,9 @@ public class SATSolverTest {
         Literal nb = b.getNegation();
         Literal nc = c.getNegation();
 
-        SATSolverTest test = new SATSolverTest();
-        test.testSATSolver1();
-        test.testSATSolver2();
+        // SATSolverTest test = new SATSolverTest();
+        // test.testSATSolver1();
+        // test.testSATSolver2();
 
         // SATSolver solverRand = new SATSolver();
         // System.out.println(solverRand.solve(makeFm(makeCl(a,b),makeCl(c,nb))));
@@ -115,9 +115,14 @@ public class SATSolverTest {
                 }
 
                 // Final formula
+                System.out.println("SAT solver starts!!!");
+                long started = System.nanoTime();
                 Formula fm = makeFm(clauses);
                 SATSolver solver = new SATSolver();
                 System.out.println(solver.solve(fm));
+                long time = System.nanoTime();
+                long timeTaken= time - started;
+                System.out.println("Time:" + timeTaken/1000000.0 + "ms");
 
                 // System.out.println("Number of variables: " + numVariables + ", number of clauses: " + numClauses);  
             }

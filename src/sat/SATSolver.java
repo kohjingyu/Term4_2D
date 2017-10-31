@@ -31,18 +31,20 @@ public class SATSolver {
         // Initially use an environment where everything is true
         Environment env = new Environment();        
 
-        Iterator<Clause> clauseIter = formula.iterator();
-        Clause c = clauseIter.next();
-        while(c != null)
-        {
-            Iterator<Literal> litIter = c.iterator();
-            Literal lit = litIter.next();
-            while(lit != null) {
-                env = env.putTrue(lit.getVariable());
-                lit = litIter.next();
-            }
-            c = clauseIter.next();
-        }
+        // Iterator<Clause> clauseIter = formula.iterator();
+        // Clause c = clauseIter.next();
+        // while(c != null)
+        // {
+        //     Iterator<Literal> litIter = c.iterator();
+        //     Literal lit = litIter.next();
+        //     while(lit != null) {
+        //         env = env.putTrue(lit.getVariable());
+        //         lit = litIter.next();
+        //     }
+
+        //     c = clauseIter.next();
+        //     System.out.println(env);
+        // }
 
         return solve(formula.getClauses(), env);
     }
@@ -93,6 +95,10 @@ public class SATSolver {
             // If it is a negative literal, evaluate it using the NegLiteral's eval method instead
             if(l instanceof NegLiteral) {
                 boolToSet = ((NegLiteral)l).eval(env);
+
+                if(boolToSet == Bool.UNDEFINED) {
+                    boolToSet = Bool.TRUE;
+                }
             }
 
             // Substitute for it
@@ -102,6 +108,7 @@ public class SATSolver {
 
             if(trueEnv == null && clauses.size() > 1) {
                 // Fails, substitute False and solve recursively
+                newClauses = substitute(clauses, l.getNegation());
                 newEnv = env.put(varToChange, boolToSet.not());
                 return solve(newClauses, newEnv);
             }
