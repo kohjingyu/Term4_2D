@@ -29,8 +29,6 @@ public class SATSolver {
      */
     public static Environment solve(Formula formula) {
         // Initially use an environment where everything is true
-        System.out.println(formula);
-
         Environment env = new Environment();        
 
         Iterator<Clause> clauseIter = formula.iterator();

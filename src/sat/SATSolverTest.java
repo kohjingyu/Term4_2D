@@ -35,8 +35,12 @@ public class SATSolverTest {
         Literal nb = b.getNegation();
         Literal nc = c.getNegation();
 
-        SATSolver solverRand = new SATSolver();
-        System.out.println(solverRand.solve(makeFm(makeCl(a,b),makeCl(c,nb))));
+        SATSolverTest test = new SATSolverTest();
+        test.testSATSolver1();
+        test.testSATSolver2();
+
+        // SATSolver solverRand = new SATSolver();
+        // System.out.println(solverRand.solve(makeFm(makeCl(a,b),makeCl(c,nb))));
 
         // Graph g = new Graph(makeFm(makeCl(a,b)));
         // g.display();
@@ -86,8 +90,8 @@ public class SATSolverTest {
                                     // End of clause, add to clauses
                                     Literal[] clauseLiterals = currentLiterals.toArray(new Literal[currentLiterals.size()]);
                                     Clause newCl = makeCl(clauseLiterals);
-                                    currentLiterals.clear();
                                     clauses[currentClause] = newCl;
+                                    currentLiterals.clear();
                                     currentClause += 1;
                                 }
                                 else {
@@ -113,7 +117,7 @@ public class SATSolverTest {
                 // Final formula
                 Formula fm = makeFm(clauses);
                 SATSolver solver = new SATSolver();
-                solver.solve(fm);
+                System.out.println(solver.solve(fm));
 
                 // System.out.println("Number of variables: " + numVariables + ", number of clauses: " + numClauses);  
             }
@@ -129,9 +133,9 @@ public class SATSolverTest {
     	// (a v b)
     	Environment e = SATSolver.solve(makeFm(makeCl(a,b))	);
 
-    	// assertTrue( "one of the literals should be set to true",
-    	// 		Bool.TRUE == e.get(a.getVariable())  
-    	// 		|| Bool.TRUE == e.get(b.getVariable())	);
+    	assertTrue( "one of the literals should be set to true",
+    			Bool.TRUE == e.get(a.getVariable())  
+    			|| Bool.TRUE == e.get(b.getVariable())	);
     	
     }
     
@@ -139,15 +143,15 @@ public class SATSolverTest {
     public void testSATSolver2(){
     	// (~a)
     	Environment e = SATSolver.solve(makeFm(makeCl(na)));
-/*
     	assertEquals( Bool.FALSE, e.get(na.getVariable()));
-*/    	
     }
     
     private static Formula makeFm(Clause... e) {
         Formula f = new Formula();
         for (Clause c : e) {
-            f = f.addClause(c);
+            if(c != null) {
+                f = f.addClause(c);
+            }
         }
         return f;
     }
