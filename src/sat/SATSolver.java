@@ -7,7 +7,6 @@ import sat.env.Variable;
 import sat.formula.Clause;
 import sat.formula.Formula;
 import sat.formula.Literal;
-import sat.formula.PosLiteral;
 import sat.formula.NegLiteral;
 
 import java.util.Iterator;
@@ -29,23 +28,7 @@ public class SATSolver {
      */
     public static Environment solve(Formula formula) {
         // Initially use an environment where everything is true
-        Environment env = new Environment();        
-
-        // Iterator<Clause> clauseIter = formula.iterator();
-        // Clause c = clauseIter.next();
-        // while(c != null)
-        // {
-        //     Iterator<Literal> litIter = c.iterator();
-        //     Literal lit = litIter.next();
-        //     while(lit != null) {
-        //         env = env.putTrue(lit.getVariable());
-        //         lit = litIter.next();
-        //     }
-
-        //     c = clauseIter.next();
-        //     System.out.println(env);
-        // }
-
+        Environment env = new Environment();
         return solve(formula.getClauses(), env);
     }
 
@@ -132,17 +115,16 @@ public class SATSolver {
     private static ImList<Clause> substitute(ImList<Clause> clauses,
             Literal l) {
         ImList<Clause> newClauses = clauses;
+
         for (Clause c : clauses) {
             // c is single variable clause
-            if(c.reduce(l) == null) {
-                newClauses = newClauses.remove(c);
-            }
-            else {
-                newClauses = newClauses.add(c.reduce(l));
+            if (c.contains(l)){
+                if(c.reduce(l) != null) {
+                    newClauses = newClauses.add(c.reduce(l));
+                }
                 newClauses = newClauses.remove(c);
             }
         }
-
         return newClauses;
     }
 
