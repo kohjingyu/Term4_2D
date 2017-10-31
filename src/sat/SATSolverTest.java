@@ -36,7 +36,7 @@ public class SATSolverTest {
         Literal nc = c.getNegation();
 
         SATSolver solverRand = new SATSolver();
-        System.out.println(solverRand.solveRandom(makeFm(makeCl(a,na))));
+        System.out.println(solverRand.solveRandom(makeFm(makeCl(a,b),makeCl(a,c))));
 
         // Graph g = new Graph(makeFm(makeCl(a,b)));
         // g.display();
@@ -74,7 +74,7 @@ public class SATSolverTest {
                                 
                             }
                             else {
-                                throw new IOException("Invalid file provided");
+                                throw new IOException("INVALID INPUT");
                             }
                         }
                         else if(!splitted[0].equals("c")) {

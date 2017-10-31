@@ -17,7 +17,6 @@ import java.util.Random;
  * A simple DPLL SAT solver. See http://en.wikipedia.org/wiki/DPLL_algorithm
  */
 public class SATSolver {
-    private final int NUM_RANDOM_TRIES; // Number of times to try the random walk
 
     /**
      * Solve the problem using a simple version of DPLL with backtracking and
@@ -53,12 +52,12 @@ public class SATSolver {
         }
 
         // System.out.println(env);
-        int maxTries = env.
+        int maxTries = 100 * env.getSize() * env.getSize();
         return SATSolver.randomWalkify(formula, env, maxTries);
     }
 
     public static Environment randomWalkify(Formula formula, Environment env, int triesLeft) {
-        // If we exceed the number of tries, stop
+        // If we exceed the number of tries, stop and return null (no answer found)
         if(triesLeft <= 0) {
             return null;
         }
@@ -103,7 +102,7 @@ public class SATSolver {
                     }
                 }
 
-                System.out.println(varToChange);
+                // Try again with the new variable
                 Environment newEnv = env.put(varToChange, firstBool.not());
                 return randomWalkify(formula, newEnv, triesLeft - 1);
             }

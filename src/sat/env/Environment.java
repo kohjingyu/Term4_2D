@@ -68,6 +68,10 @@ public class Environment {
         else return b;
     }
 
+    public int getSize() {
+        return bindings.size();
+    }
+
     @Override
     public String toString () {
         return "Environment:" + bindings;
