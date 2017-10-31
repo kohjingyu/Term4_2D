@@ -11,6 +11,8 @@ import immutable.ImList;
 import immutable.ImListIterator;
 import immutable.NonEmptyImList;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 
 import sat.env.Variable;
@@ -169,5 +171,19 @@ public class Formula {
         for (Clause c : clauses)
             result += "\n" + c;
         return result + "]";
+    }
+
+    public ImList<Clause> sort(ImList<Clause> clauses){ //to sort formula so we dont have to sort 6000 times thank u
+        ArrayList<Clause> ls = new ArrayList<>();
+        for (Clause c: clauses){
+            ls.add(c);
+        }
+        Collections.sort(ls, new ClauseComparator());
+        ImList<Clause> newClauses = clauses;
+        for (int i = ls.size()-1; i >= 0 ; i--) {
+            newClauses = newClauses.remove(ls.get(i));
+            newClauses = newClauses.add(ls.get(i));
+        }
+        return newClauses;
     }
 }

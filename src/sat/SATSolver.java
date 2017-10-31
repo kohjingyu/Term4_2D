@@ -125,6 +125,7 @@ public class SATSolver {
                 newClauses = newClauses.remove(c);
             }
         }
+
         return newClauses;
     }
 
