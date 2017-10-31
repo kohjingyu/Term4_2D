@@ -28,7 +28,10 @@ public class SATSolver {
     public static Environment solve(Formula formula) {
         Environment env = new Environment();
 
-        return solve(formula.sort(formula.getClauses()), env);
+        // long started = System.nanoTime();
+        ImList<Clause> clauses = formula.sort(formula.getClauses());
+        // System.out.println("Time taken: " + (System.nanoTime() - started));
+        return solve(clauses, env);
     }
 
     /**
@@ -63,7 +66,7 @@ public class SATSolver {
             ImList<Clause> newClauses = substitute(clauses, l);
             Environment newEnv = env.put(varToChange, boolToSet);
             newEnv = solve(newClauses, newEnv);
-
+    
             if(newEnv == null && clauses.size() > 1) {
                 // Fails, substitute False and solve recursively
                 newClauses = substitute(clauses, l.getNegation());

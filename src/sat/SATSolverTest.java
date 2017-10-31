@@ -119,8 +119,8 @@ public class SATSolverTest {
                 long started = System.nanoTime();
                 Formula fm = makeFm(clauses);
                 SATSolver solver = new SATSolver();
-                // System.out.println(solver.solve(fm));
-                System.out.println(solver.solveRandom(fm, numVariables));
+                System.out.println(solver.solve(fm));
+                // System.out.println(solver.solveRandom(fm, numVariables));
                 long time = System.nanoTime();
                 long timeTaken= time - started;
                 System.out.println("Time:" + timeTaken/1000000.0 + "ms");
