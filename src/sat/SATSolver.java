@@ -29,7 +29,7 @@ public class SATSolver {
         Environment env = new Environment();
 
         // long started = System.nanoTime();
-        ImList<Clause> clauses = formula.sort(formula.getClauses());
+        ImList<Clause> clauses = formula.getClauses(); //formula.sort(formula.getClauses());
         // System.out.println("Time taken: " + (System.nanoTime() - started));
         return solve(clauses, env);
     }
@@ -52,32 +52,63 @@ public class SATSolver {
             return env;
         }
         else {
-            Clause smallest = clauses.first(); // Initialize as first Clause
             // Find smallest clause
-            if(smallest.isEmpty()) return null;
+            Clause smallest = clauses.first(); // Initialize as first Clause
+
+            // remove empty clauses
+            for(Clause c : clauses) {
+                if(c.isEmpty()) return null;
+
+                if(c.size() < smallest.size()) {
+                    smallest = c;
+                }
+            }
 
             // work on smallest clause
             // Pick arbitrary literal
-            Literal l = smallest.chooseLiteral();
-            Variable varToChange = l.getVariable();
+            Literal first = smallest.chooseLiteral();
+            Variable varToChange = first.getVariable();
 
             // Substitute for it
-            ImList<Clause> newClauses = substitute(clauses, l);
-            Environment newEnv = env.put(varToChange, Bool.TRUE);
+            ImList<Clause> newClauses;
+            Environment newEnv;
 
-            if(l instanceof NegLiteral) {
-                // Set to false
+            if(first instanceof NegLiteral) {
+                // To set neg literal to true -> set variable to false
                 newEnv = env.put(varToChange, Bool.FALSE);
             }
+            else {
+                // To set pos literal to true -> set variable to true
+                newEnv = env.put(varToChange, Bool.TRUE);
+            }
 
+            newClauses = substitute(clauses, first);
             newEnv = solve(newClauses, newEnv);
+            // if(newClauses == null) {
+            //     newEnv = null;
+            // }
+            // else {
+            // }
 
             // If more than one literal, set to FALSE if the first one fails
             if(newEnv == null && smallest.size() > 1) {
                 // Fails, substitute False and solve recursively
-                newClauses = substitute(clauses, l.getNegation());
-                newEnv = env.put(varToChange, Bool.FALSE);
+                if(first instanceof NegLiteral) {
+                    // To set neg literal to false -> set var to true
+                    newEnv = env.put(varToChange, Bool.TRUE);
+                }
+                else {
+                    // To set pos literal to false -> set var to false
+                    newEnv = env.put(varToChange, Bool.FALSE);
+                }
+                newClauses = substitute(clauses, first.getNegation());
+
                 newEnv = solve(newClauses, newEnv);
+                // if(newClauses == null) {
+                //     return null;
+                // }
+                // else {
+                // }
             }
 
             return newEnv;
@@ -100,12 +131,15 @@ public class SATSolver {
 
         for (Clause c : clauses) {
             // c is single variable clause
-            if (c.contains(l) || c.contains(l.getNegation())){
-                if(c.reduce(l) != null) {
-                    newClauses = newClauses.add(c.reduce(l));
-                }
-                newClauses = newClauses.remove(c);
+            Clause reducedC = c.reduce(l);
+            if(reducedC != null) {
+                // if(reducedC.isEmpty()) {
+                //     return null;
+                // }
+
+                newClauses = newClauses.add(reducedC);
             }
+            newClauses = newClauses.remove(c);
         }
         return newClauses;
     }
