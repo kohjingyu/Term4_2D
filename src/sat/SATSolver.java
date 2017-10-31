@@ -2,14 +2,23 @@ package sat;
 
 import immutable.ImList;
 import sat.env.Environment;
+import sat.env.Bool;
+import sat.env.Variable;
 import sat.formula.Clause;
 import sat.formula.Formula;
 import sat.formula.Literal;
+import sat.formula.PosLiteral;
+import sat.formula.NegLiteral;
+
+import java.util.Iterator;
+import java.util.Random;
 
 /**
  * A simple DPLL SAT solver. See http://en.wikipedia.org/wiki/DPLL_algorithm
  */
 public class SATSolver {
+    private final int NUM_RANDOM_TRIES; // Number of times to try the random walk
+
     /**
      * Solve the problem using a simple version of DPLL with backtracking and
      * unit propagation. The returned environment binds literals of class
@@ -24,6 +33,86 @@ public class SATSolver {
         System.out.println(formula);
 
         throw new RuntimeException("not yet implemented.");
+    }
+
+    public static Environment solveRandom(Formula formula) {
+        // Find all variables
+        Environment env = new Environment();        
+
+        Iterator<Clause> clauseIter = formula.iterator();
+        Clause c = clauseIter.next();
+        while(c != null)
+        {
+            Iterator<Literal> litIter = c.iterator();
+            Literal lit = litIter.next();
+            while(lit != null) {
+                env = env.putFalse(lit.getVariable());
+                lit = litIter.next();
+            }
+            c = clauseIter.next();
+        }
+
+        // System.out.println(env);
+        int maxTries = env.
+        return SATSolver.randomWalkify(formula, env, maxTries);
+    }
+
+    public static Environment randomWalkify(Formula formula, Environment env, int triesLeft) {
+        // If we exceed the number of tries, stop
+        if(triesLeft <= 0) {
+            return null;
+        }
+        
+        // Find unsatisfied clauses
+        Iterator<Clause> clauseIter = formula.iterator();
+        Clause c = clauseIter.next();
+        while(c != null)
+        {
+            // Check if clause is satisfied
+            Iterator<Literal> litIter = c.iterator();
+            Literal firstLit = litIter.next();
+            Literal secondLit = litIter.next();
+            Variable firstVar = firstLit.getVariable();
+            Variable secondVar = secondLit.getVariable();
+            Bool firstBool = firstVar.eval(env);
+            Bool secondBool = secondVar.eval(env);
+
+            // If it is a negative literal, evaluate it using the NegLiteral's eval method instead
+            if(firstLit instanceof NegLiteral) {
+                firstBool = ((NegLiteral)firstLit).eval(env);
+            }
+
+            if(secondLit instanceof NegLiteral) {
+                secondBool = ((NegLiteral)secondLit).eval(env);
+            }
+
+            if(firstBool.or(secondBool) == Bool.TRUE) {
+                // Clause is satisfied, move on
+            }
+            else {
+                // Unsatisfied clause - change one variable randomly
+                Variable varToChange = firstVar;
+
+                // If this Clause has 2 variables, pick one at random to change
+                if(secondLit != null) {
+                    Random rand = new Random();
+                    int randNum = rand.nextInt(2);
+
+                    if(randNum == 1) {
+                        varToChange = secondVar;
+                    }
+                }
+
+                System.out.println(varToChange);
+                Environment newEnv = env.put(varToChange, firstBool.not());
+                return randomWalkify(formula, newEnv, triesLeft - 1);
+            }
+
+            c = clauseIter.next();
+        }
+
+        // All clauses satisfied! Hooray!
+        return env;
     }
 
     /**
