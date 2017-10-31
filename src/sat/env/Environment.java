@@ -68,6 +68,14 @@ public class Environment {
         else return b;
     }
 
+    public int getSize() {
+        return bindings.size();
+    }
+
+    public ImMap <Variable, Bool>  getBindings() {
+        return this.bindings;
+    }
+
     @Override
     public String toString () {
         return "Environment:" + bindings;

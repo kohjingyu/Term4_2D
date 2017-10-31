@@ -9,7 +9,10 @@ import immutable.EmptyImList;
 import immutable.ImList;
 import immutable.NonEmptyImList;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * A class for clauses in a CNF representation of a logic formula.
@@ -192,4 +195,6 @@ public class Clause implements Iterable<Literal> {
             if (!(c.contains(l))) return false;
         return true;
     }
+
+
 }
