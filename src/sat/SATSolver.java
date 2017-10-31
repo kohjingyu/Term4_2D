@@ -27,9 +27,9 @@ public class SATSolver {
      *         null if no such environment exists.
      */
     public static Environment solve(Formula formula) {
-        // Initially use an environment where everything is true
         Environment env = new Environment();
-        return solve(formula.getClauses(), env);
+
+        return solve(formula.sort(formula.getClauses()), env);
     }
 
     /**
@@ -51,9 +51,9 @@ public class SATSolver {
         }
         else {
             // Find smallest clause
-            Clause smallest = clauses.first(); // Initialize as first Clause
+            if(clauses.first().isEmpty()) return null;
 
-            if(smallest.isEmpty()) return null;
+            Clause smallest = clauses.first(); // Initialize as first Clause
 
             // Iterate through all the other Clauses
             for(Clause c : clauses.rest()) {
@@ -62,11 +62,7 @@ public class SATSolver {
                     // Unsatisfiable, fail and backtrack
                     return null;
                 }
-                // Check if this Clause is smaller
-                else if(c.size() < smallest.size()) {
-                    // Set this to be the smallest
-                    smallest = c;
-                }
+
             }
 
             // work on smallest clause
@@ -93,12 +89,13 @@ public class SATSolver {
                 // Fails, substitute False and solve recursively
                 newClauses = substitute(clauses, l.getNegation());
                 newEnv = env.put(varToChange, boolToSet.not());
-                return solve(newClauses, newEnv);
+
             }
-            else {
-                // Works! Return
-                return trueEnv;
-            }
+            return trueEnv;
+//            else {
+//                // Works! Return
+//                return trueEnv;
+//            }
         }
     }
 
@@ -125,6 +122,7 @@ public class SATSolver {
                 newClauses = newClauses.remove(c);
             }
         }
+
         return newClauses;
     }
 
