@@ -169,15 +169,17 @@ public class SATSolver {
         }
 
         // System.out.println(env);
-        int maxTries = 100 * env.getSize() * env.getSize();
+        long maxTries = 1000000;//100 * env.getSize() * env.getSize();
+        System.out.println(maxTries);
         return SATSolver.randomWalkify(formula, env, maxTries);
     }
 
-    public static Environment randomWalkify(Formula formula, Environment env, int triesLeft) {
+    public static Environment randomWalkify(Formula formula, Environment env, long triesLeft) {
         // If we exceed the number of tries, stop and return null (no answer found)
         if(triesLeft <= 0) {
             return null;
         }
+        System.out.println(triesLeft);
         
         // Find unsatisfied clauses
         Iterator<Clause> clauseIter = formula.iterator();
@@ -187,42 +189,57 @@ public class SATSolver {
             // Check if clause is satisfied
             Iterator<Literal> litIter = c.iterator();
             Literal firstLit = litIter.next();
-            Literal secondLit = litIter.next();
+
+            // Empty Clause - Unsolvable
+            if(firstLit == null) {
+                return null;
+            }
+
             Variable firstVar = firstLit.getVariable();
-            Variable secondVar = secondLit.getVariable();
             Bool firstBool = firstVar.eval(env);
-            Bool secondBool = secondVar.eval(env);
 
-            // If it is a negative literal, evaluate it using the NegLiteral's eval method instead
-            if(firstLit instanceof NegLiteral) {
-                firstBool = ((NegLiteral)firstLit).eval(env);
-            }
+            if(firstBool != Bool.TRUE) {
+                Literal secondLit = litIter.next();
 
-            if(secondLit instanceof NegLiteral) {
-                secondBool = ((NegLiteral)secondLit).eval(env);
-            }
+                Bool secondBool = Bool.FALSE;
+                Variable secondVar = null;
 
-            if(firstBool.or(secondBool) == Bool.TRUE) {
-                // Clause is satisfied, move on
-            }
-            else {
-                // Unsatisfied clause - change one variable randomly
-                Variable varToChange = firstVar;
-
-                // If this Clause has 2 variables, pick one at random to change
-                if(secondLit != null) {
-                    Random rand = new Random();
-                    int randNum = rand.nextInt(2);
-
-                    if(randNum == 1) {
-                        varToChange = secondVar;
-                    }
+                if(secondLit != null)
+                {
+                    secondVar = secondLit.getVariable();
+                    secondBool = secondVar.eval(env);
                 }
 
-                // Try again with the new variable
-                Environment newEnv = env.put(varToChange, firstBool.not());
-                return randomWalkify(formula, newEnv, triesLeft - 1);
-            }
+                // If it is a negative literal, evaluate it using the NegLiteral's eval method instead
+                if(firstLit instanceof NegLiteral) {
+                    firstBool = ((NegLiteral)firstLit).eval(env);
+                }
+
+                if(secondLit instanceof NegLiteral) {
+                    secondBool = ((NegLiteral)secondLit).eval(env);
+                }
+
+                if(secondBool == Bool.TRUE) {
+                    // Clause is satisfied, move on
+                }
+                else {
+                    // Unsatisfied clause - change one variable randomly
+                    Variable varToChange = firstVar;
+
+                    // If this Clause has 2 variables, pick one at random to change
+                    if(secondLit != null) {
+                        Random rand = new Random();
+                        int randNum = rand.nextInt(2);
+
+                        if(randNum == 1) {
+                            varToChange = secondVar;
+                        }
+                    }
+
+                    // Try again with the new variable
+                    Environment newEnv = env.put(varToChange, firstBool.not());
+                    return randomWalkify(formula, newEnv, triesLeft - 1);
+                }
 
             c = clauseIter.next();
         }
