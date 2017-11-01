@@ -125,12 +125,17 @@ public class SATSolverTest {
                 System.out.println("SAT solver starts!!!");
                 long started = System.nanoTime();
                 Formula fm = makeFm(clauses);
-                SATSolver solver = new SATSolver();
-                System.out.println(solver.solve(fm));
-                System.out.println(solver.solveRandom(fm, numVariables, degree));
+//                SATSolver solver = new SATSolver();
+//                System.out.println(solver.solve(fm));
+//                System.out.println(solver.solveRandom(fm, numVariables, degree));
                 Graph graph = new Graph(fm);
+//                graph.solve();
+//                graph.display();
+//                System.out.println("----------------------");
+                graph.getTranspose();
+                System.out.println("----------------------");
                 graph.solve();
-                graph.display();
+                
 //                SATSolver solver = new SATSolver();
 //                System.out.println(solver.solve(fm));
                 // System.out.println(solver.solveRandom(fm, numVariables));

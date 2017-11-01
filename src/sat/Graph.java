@@ -14,10 +14,9 @@ import java.util.Iterator;
 import java.util.Stack;
 
 public class Graph {
-	private HashMap<Literal, ArrayList<Literal>> adj = new HashMap<>(); // Adjacency list
-	private HashMap<Literal, Literal> parent = new HashMap<>();
+	public HashMap<Literal, ArrayList<Literal>> adj = new HashMap<>(); // Adjacency list
+	public HashMap<Literal, Literal> parent = new HashMap<>();
 	private HashMap<Literal, Boolean> satisfiability = new HashMap<>();
-//	private ArrayList<Literal> V = new ArrayList<>();
 	private ArrayList<HashMap<Literal, Boolean>> SCC = new ArrayList<>(); // All vertices in the graph
 	private Stack<Literal> S = new Stack<>();
 	private boolean satisfiable;
@@ -56,10 +55,6 @@ public class Graph {
 				satisfiability.put(secondLit, null);
 				satisfiability.put(nSecondLit, null);
 				
-//				V.add(firstLit);
-//				V.add(nFirstLit);
-//				V.add(secondLit);
-//				V.add(nSecondLit);
 
 				// For a clause (a OR b)
 				// Add edges ~a -> b and ~b -> a for each clause
@@ -88,17 +83,27 @@ public class Graph {
 		this.satisfiability = satisfiability;
 	}
 
-	public void DFS_visit(Graph graph, int counter, Literal s) {
-		HashMap<Literal, Boolean> innerSCC = SCC.get(counter);
-		innerSCC.put(s,null);
-		ArrayList<Literal> adjVertices = this.adj.get(s);
-		for(Literal v : adjVertices) {
-			if(this.parent.get(v) == null) {
-				this.parent.put(v, s);
-				DFS_visit(graph, counter, v);
+	public void DFS_visit(Graph graph, int counter, Literal s, boolean isSCC) {
+		if (isSCC) { //Check if we are finding SCC
+			HashMap<Literal, Boolean> innerSCC = SCC.get(counter); //get the hashmap for the SCC
+			innerSCC.put(s, null); //insert literal to the hashmap
+//			System.out.println(s);
+//			System.out.println(innerSCC);
+//			System.out.println(SCC);
+		}
+		ArrayList<Literal> neighbours = graph.adj.get(s); //Get the array list containing neighbours
+		if (neighbours == null){ //If there are no neighbours, end.
+			return;
+		}
+		for(Literal v : neighbours) {
+			if(graph.parent.get(v) == null) { //If the literal is already traversed, do nothing.
+				graph.parent.put(v, s);
+				DFS_visit(graph, counter, v, isSCC);
 			}
 		}
-
+		if (!S.contains(s) && !isSCC) {
+			S.push(s);
+		}
 	}
 	
 //	public void DFS_visitSCC(Literal s) {
@@ -114,84 +119,108 @@ public class Graph {
 		
 //	}
 
-	public void DFS(Graph graph) {
+	public void DFS(Graph graph, boolean isSCC) {
 		for(Literal s : this.satisfiability.keySet()) {
 			if(parent.get(s) == null) {
-				parent.put(s, null);
-				DFS_visit(graph,0, s);
+				parent.put(s, s);
+				DFS_visit(graph,0, s, isSCC);
 			}
-			S.push(s);
+			if (!S.contains(s) && !isSCC) {
+				S.push(s);
+			}
 		}
 		
 	}
 	
 	public ArrayList<HashMap<Literal, Boolean>> getSCC(){ //Create Strongly Connected Component
-		this.DFS(this);
+		this.DFS(this, false);
 		Graph transposedGraph = this.getTranspose();
 		//Clear SCC and Parent for second DFS
 		SCC.clear();
 		parent.clear();
 		int counter = 0;
+		System.out.println(S);
 		while (!S.empty()){
 			Literal v = S.pop();
-			DFS_visit(transposedGraph, counter, v);
-			counter++;
+			if (!transposedGraph.parent.containsKey(v)) {
+				transposedGraph.parent.put(v, v);
+				SCC.add(new HashMap<Literal, Boolean>()); //Allocate space
+				DFS_visit(transposedGraph, counter, v, true);
+				counter++;
+			}
 		}
+		System.out.println("I'm here");
 		return SCC;
 		
 	}
 	
 	//Reverse topological order --> From counter high to low
 	public void solve(){
-		for (int i = SCC.size(); i > 0 ; i--) {
+		getSCC();
+		for (int i = SCC.size() - 1; i >= 0 ; i--) {
 			HashMap<Literal, Boolean> innerSCC = SCC.get(i);
+//			System.out.println(innerSCC);
 			for (Literal lit : innerSCC.keySet()) {
-				if (satisfiability.get(lit) == null) {
-					if (innerSCC.get(lit.getNegation()) != null) { //Check for contradiction
+				if (satisfiability.get(lit) == null) { //check if the boolean value is already assigned to the literal
+					if (innerSCC.containsKey(lit.getNegation())) { //Check for contradiction
 						System.out.println(false);
+						return;
 					} else {
 						satisfiability.put(lit, true);
 						satisfiability.put(lit.getNegation(), false);
 					}
-					
 				}
 			}
 		}
+		System.out.println(SCC);
 		System.out.println(true);
+//		for (Literal lit : satisfiability.keySet()){
+//			System.out.println("" + lit + satisfiability.get(lit));
+//		}
 	}
 	
 
 	
 	public Graph getTranspose(){
 		Graph newGraph = new Graph(this.satisfiability);
+		HashMap<Literal, ArrayList<Literal>> adjTranspose = newGraph.getAdj();
 		for (Literal lit1 : this.satisfiability.keySet()){
-			ArrayList<Literal> adjacency = this.adj.get(lit1);
-			for (Literal lit2 : adjacency){
-				ArrayList<Literal> lit2adj = newGraph.adj.get(lit2);
-				if ( lit2adj == null) {
-					lit2adj = new ArrayList<Literal>();
-					lit2adj.add(lit2);
-				}
-				else {
-					lit2adj.add(lit2);
+			ArrayList<Literal> neighbours = this.adj.get(lit1); //get the literals adjacent to lit1
+			if (neighbours != null) {
+				for (Literal lit2 : neighbours) { //iterate through the adjacent literals
+					 // get the list storing the adjacent literals of lit2
+					ArrayList<Literal> lit2adj = adjTranspose.get(lit2);
+					if (lit2adj == null) { //If it doesn't exist, initialise
+						lit2adj = new ArrayList<>();
+						lit2adj.add(lit1);
+						adjTranspose.put(lit2, lit2adj);
+					} else {
+						lit2adj.add(lit1);
+					}
 				}
 			}
 		}
+//		newGraph.display();
 		return newGraph;
+		
+	}
+	
+	public HashMap<Literal, ArrayList<Literal>> getAdj(){
+		return this.adj;
 	}
 
 	public void display() {
-//		for(Literal lit : adj.keySet()) {
-//			System.out.print(lit + ": ");
-//
-//			for(Literal v : adj.get(lit)) {
-//				System.out.print(v + ", ");
-//			}
-//			System.out.println();
-//		}
-		for (Literal lit : satisfiability.keySet()){
-			System.out.println(satisfiability.get(lit));
+		for(Literal lit : adj.keySet()) {
+			System.out.print(lit + ": ");
+
+			for(Literal v : adj.get(lit)) {
+				System.out.print(v + ", ");
+			}
+			System.out.println();
 		}
+//		for (Literal lit : satisfiability.keySet()){
+//			System.out.println("" + lit + satisfiability.get(lit));
+//		}
 
 	}
 }
