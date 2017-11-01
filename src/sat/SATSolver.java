@@ -84,8 +84,10 @@ public class SATSolver {
                 env = env.put(varToChange, Bool.TRUE);
             }
 
-            if(smallest.size() == 1) {
-                return solve(newClauses, env);
+            Environment newSolution = solve(newClauses, env);
+            
+            if(newSolution != null || smallest.size() == 1) {
+                return newSolution;
             }
             else {
                 // If more than one literal, set to FALSE if the first one fails
