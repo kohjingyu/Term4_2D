@@ -25,12 +25,9 @@ public class SATSolver {
      * @return an environment for which the problem evaluates to Bool.TRUE, or
      *         null if no such environment exists.
      */
-    public static Environment solve(Formula formula) {
-        Environment env = new Environment();
-
-        // long started = System.nanoTime();
-        ImList<Clause> clauses = formula.getClauses(); //formula.sort(formula.getClauses());
-        // System.out.println("Time taken: " + (System.nanoTime() - started));
+    public static HashMap<Variable, Bool> solve(Formula formula) {
+        HashMap<Variable, Bool> env = new HashMap<Variable, Bool>();
+        ImList<Clause> clauses = formula.getClauses();
         return solve(clauses, env);
     }
 
@@ -46,7 +43,7 @@ public class SATSolver {
      * @return an environment for which all the clauses evaluate to Bool.TRUE,
      *         or null if no such environment exists.
      */
-    private static Environment solve(ImList<Clause> clauses, Environment env) {
+    private static HashMap<Variable, Bool> solve(ImList<Clause> clauses, HashMap<Variable, Bool> env) {
         if(clauses.isEmpty()) {
             // No clauses, trivially satisfiable
             return env;
@@ -54,34 +51,30 @@ public class SATSolver {
         else {
             // Find smallest clause
             Clause smallest = clauses.first(); // Initialize as first Clause
-
-            // remove empty clauses
             for(Clause c : clauses.rest()) {
-                if(c.isEmpty()) return null;
-
                 if(c.size() < smallest.size()) {
                     smallest = c;
                 }
             }
 
-            // work on smallest clause
+            // Work on smallest clause
             // Pick arbitrary literal
 
-            // Iterator<Literal> litIter = smallest.iterator();
             Literal first = smallest.chooseLiteral();
             Variable varToChange = first.getVariable();
             ImList<Clause> newClauses = substitute(clauses, first);
+            // substitute returns null if there's an empty Clause (unsatisfiable)
             if(newClauses == null) {
                 return null;
             }
 
             if(first instanceof NegLiteral) {
                 // To set neg literal to true -> set variable to false
-                env = env.put(varToChange, Bool.FALSE);
+                env.put(varToChange, Bool.FALSE);
             }
             else {
                 // To set pos literal to true -> set variable to true
-                env = env.put(varToChange, Bool.TRUE);
+                env.put(varToChange, Bool.TRUE);
             }
 
             if(smallest.size() == 1) {
@@ -90,21 +83,22 @@ public class SATSolver {
             }
             else {
                 // Substitute for it
-                Environment firstSol = solve(newClauses, env);
+                HashMap<Variable, Bool> firstSol = solve(newClauses, env);
 
                 if(firstSol == null) {
                     newClauses = substitute(clauses, first.getNegation());
+                    // substitute returns null if there's an empty Clause (unsatisfiable)
                     if(newClauses == null) {
                         return null;
                     }
 
                     if(first instanceof NegLiteral) {
                         // To set neg literal to true -> set variable to false
-                        env = env.put(varToChange, Bool.TRUE);
+                        env.put(varToChange, Bool.TRUE);
                     }
                     else {
                         // To set pos literal to true -> set variable to true
-                        env = env.put(varToChange, Bool.FALSE);
+                        env.put(varToChange, Bool.FALSE);
                     }
 
                     return solve(newClauses, env);
