@@ -13,6 +13,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Stack;
 
+/*
+Solver for 2-SAT problems. It makes use of Strongly Connected Components property and the fact that (A OR B) == (~A --> B).
+The strongly connected components are generated using Kosaraju's algorithm.
+If a literal and its negation exist in the same strongly connected component, the 2-SAT is unsatisfiable.
+Otherwise it is satisfiable
+ */
+
 public class Graph {
 	public HashMap<Literal, ArrayList<Literal>> adj = new HashMap<>(); // Adjacency list
 	public HashMap<Literal, Literal> parent = new HashMap<>();
@@ -30,15 +37,17 @@ public class Graph {
 			}
 			else if(c.size() == 0) {
 				// Trivial case: false
-				// TODO: Return false
 				satisfiable = false;
 			}
 			else if(c.size() == 1) {
+				//Clause (lit) is equivalent to Clause (lit, lit)
 				Literal lit = c.chooseLiteral();
 				Literal nLit = lit.getNegation();
-				// Add vertex
+				// Add vertex to the graph
 				satisfiability.put(lit,null);
 				satisfiability.put(nLit,null);
+				
+				//Add edge !lit to lit
 				ArrayList<Literal> litAdj = adj.get(nLit);
 				if (litAdj == null){
 					litAdj = new ArrayList<Literal>();
@@ -82,11 +91,14 @@ public class Graph {
 			}
 		}
 	}
-	
+	//Constructor for cloning a graph with the same vertex
 	public Graph(HashMap<Literal, Boolean> satisfiability){
 		this.satisfiability = satisfiability;
 	}
 
+	
+	//Depth-First Search recursive.
+	//Counter is used during SCC DFS to separate SCC into several index in the array list
 	public void DFS_visit(Graph graph, int counter, Literal s, boolean isSCC) {
 		if (isSCC) { //Check if we are finding SCC
 			HashMap<Literal, Boolean> innerSCC = SCC.get(counter); //get the hashmap for the SCC
@@ -108,17 +120,21 @@ public class Graph {
 				DFS_visit(graph, counter, v, isSCC);
 			}
 		}
+		//Generate stack based on DFS finish time
 		if (!S.contains(s) && !isSCC) {
 			S.push(s);
 		}
 	}
 
+	//Depth-First Search implementation.
+	//isSCC checks if this is normal DFS or DFS to find SCC
 	public void DFS(Graph graph, boolean isSCC) {
 		for(Literal s : this.satisfiability.keySet()) {
 			if(parent.get(s) == null) {
 				parent.put(s, s);
 				DFS_visit(graph,0, s, isSCC);
 			}
+			//Generate stack based on DFS finish time
 			if (!S.contains(s) && !isSCC) {
 				S.push(s);
 			}
@@ -126,64 +142,15 @@ public class Graph {
 		
 	}
 	
-	public ArrayList<HashMap<Literal, Boolean>> getSCC(){ //Create Strongly Connected Component
-		this.DFS(this, false);
-		Graph transposedGraph = this.getTranspose();
-		//Clear SCC and Parent for second DFS
-		SCC.clear();
-		parent.clear();
-		int counter = 0;
-		System.out.println(S);
-		while (!S.empty()){
-			Literal v = S.pop();
-			if (!transposedGraph.parent.containsKey(v)) {
-				transposedGraph.parent.put(v, v);
-				SCC.add(new HashMap<Literal, Boolean>()); //Allocate space
-				DFS_visit(transposedGraph, counter, v, true);
-				counter++;
-			}
-		}
-		System.out.println("I'm here");
-		return SCC;
-		
-	}
-	
-	//Reverse topological order --> From counter high to low
-	public void solve(){
-		getSCC();
-		for (int i = SCC.size() - 1; i >= 0 ; i--) {
-			HashMap<Literal, Boolean> innerSCC = SCC.get(i);
-//			System.out.println(innerSCC);
-			for (Literal lit : innerSCC.keySet()) {
-				if (satisfiability.get(lit) == null) { //check if the boolean value is already assigned to the literal
-					if (innerSCC.containsKey(lit.getNegation())) { //Check for contradiction
-						System.out.println(false);
-						return;
-					} else {
-						satisfiability.put(lit, true);
-						satisfiability.put(lit.getNegation(), false);
-					}
-				}
-			}
-		}
-		//Print out the satisfiability
-		for (Literal lit : satisfiability.keySet()){
-			System.out.println("" + lit + satisfiability.get(lit));
-		}
-		System.out.println(SCC);
-		System.out.println(true);
-	}
-	
-
-	
 	public Graph getTranspose(){
+		//Transpose the graph by flipping the direction of the edges
 		Graph transposedGraph = new Graph(this.satisfiability);
-		HashMap<Literal, ArrayList<Literal>> adjTranspose = transposedGraph.getAdj();
+		HashMap<Literal, ArrayList<Literal>> adjTranspose = transposedGraph.getAdj(); //get the adjacency hashmap of the transposed graph
 		for (Literal lit1 : this.satisfiability.keySet()){ //Traversing all vertices
 			ArrayList<Literal> neighbours = this.adj.get(lit1); //get List containing literals adjacent to lit1
 			if (neighbours != null) {
 				for (Literal lit2 : neighbours) { //iterate through the list of adjacent literals
-					 // get the list storing the adjacent literals of lit2
+					// get the list storing the adjacent literals of lit2
 					ArrayList<Literal> lit2adj = adjTranspose.get(lit2);
 					if (lit2adj == null) { //If it doesn't exist, initialise
 						lit2adj = new ArrayList<>();
@@ -196,9 +163,52 @@ public class Graph {
 				//do nothing
 			}
 		}
-//		transposedGraph.display();
 		return transposedGraph;
-		
+	}
+	
+	public void generateSCC(){ //Create Strongly Connected Component
+		//Start DFS on current graph to generate finish time.
+		this.DFS(this, false);
+		Graph transposedGraph = this.getTranspose();
+		//Clear SCC and Parent for second DFS
+		SCC.clear();
+		parent.clear();
+		//Counter represent the index of the current SCC that the DFS is in.
+		int counter = 0;
+		//Traverse through the vertex in topological order of graph G. Done by popping from DFS finish-time stack
+		while (!S.empty()){
+			Literal v = S.pop();
+			if (!transposedGraph.parent.containsKey(v)) {
+				transposedGraph.parent.put(v, v);
+				SCC.add(new HashMap<Literal, Boolean>()); //Allocate space for next SCC
+				DFS_visit(transposedGraph, counter, v, true);
+				counter++; //If DFS for a vertex is done, increase counter to move on to the next SCC
+			}
+		}
+	}
+	
+	//Reverse topological order --> From counter high to low
+	public void solve(){
+		generateSCC();
+		for (int i = SCC.size() - 1; i >= 0 ; i--) {
+			HashMap<Literal, Boolean> innerSCC = SCC.get(i);
+			for (Literal lit : innerSCC.keySet()) {
+				//Check if the Literal is already marked
+				if (satisfiability.get(lit) == null) {
+					//Check for contradiction
+					if (innerSCC.containsKey(lit.getNegation())) {
+						satisfiable = false;
+						return;
+					} else {
+						//Mark Literal as true and !Literal as false
+						satisfiability.put(lit, true);
+						satisfiability.put(lit.getNegation(), false);
+					}
+				}
+			}
+		}
+		//If no contradiction occurs, it is satisfiable
+		satisfiable = true;
 	}
 	
 	public HashMap<Literal, ArrayList<Literal>> getAdj(){
@@ -206,6 +216,7 @@ public class Graph {
 	}
 
 	public void display() {
+		//display the graph
 		for(Literal lit : adj.keySet()) {
 			System.out.print(lit + ": ");
 
@@ -214,9 +225,15 @@ public class Graph {
 			}
 			System.out.println();
 		}
-//		for (Literal lit : satisfiability.keySet()){
-//			System.out.println("" + lit + satisfiability.get(lit));
-//		}
+		//display the satisfiability assignment if it is satisfiable
+		if (satisfiable) {
+			for (Literal lit : satisfiability.keySet()) {
+				System.out.println("" + lit + satisfiability.get(lit));
+			}
+			System.out.println("Satisfiable");
+		} else {
+			System.out.println("Not Satisfiable");
+		}
 
 	}
 }
