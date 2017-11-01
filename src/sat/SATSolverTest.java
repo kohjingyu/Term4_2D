@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import sat.env.*;
 import sat.formula.*;
@@ -35,9 +36,9 @@ public class SATSolverTest {
         Literal nb = b.getNegation();
         Literal nc = c.getNegation();
 
-        // SATSolverTest test = new SATSolverTest();
-        // test.testSATSolver1();
-        // test.testSATSolver2();
+        SATSolverTest test = new SATSolverTest();
+        test.testSATSolver1();
+        test.testSATSolver2();
 
         // SATSolver solverRand = new SATSolver();
         // System.out.println(solverRand.solve(makeFm(makeCl(a,b),makeCl(c,nb))));
@@ -58,6 +59,7 @@ public class SATSolverTest {
                 Clause[] clauses = null;
                 ArrayList<Literal> currentLiterals = new ArrayList<Literal>();
                 int numVariables = 0;
+                int degree = 0;
                 int numClauses = 0;
                 int currentClause = 0;
 
@@ -90,6 +92,10 @@ public class SATSolverTest {
                                     // End of clause, add to clauses
                                     Literal[] clauseLiterals = currentLiterals.toArray(new Literal[currentLiterals.size()]);
                                     Clause newCl = makeCl(clauseLiterals);
+
+                                    if(clauseLiterals.length > degree) {
+                                        degree = clauseLiterals.length;
+                                    }
                                     clauses[currentClause] = newCl;
                                     currentLiterals.clear();
                                     currentClause += 1;
@@ -120,7 +126,7 @@ public class SATSolverTest {
                 Formula fm = makeFm(clauses);
                 SATSolver solver = new SATSolver();
                 System.out.println(solver.solve(fm));
-                // System.out.println(solver.solveRandom(fm, numVariables));
+                System.out.println(solver.solveRandom(fm, numVariables, degree));
                 long time = System.nanoTime();
                 long timeTaken= time - started;
                 System.out.println("Time:" + timeTaken/1000000.0 + "ms");
@@ -137,19 +143,19 @@ public class SATSolverTest {
 	
     public void testSATSolver1(){
     	// (a v b)
-    	// Environment e = SATSolver.solve(makeFm(makeCl(a,b))	);
+    	HashMap<Variable, Bool> e = SATSolver.solve(makeFm(makeCl(a,b))	);
 
-    	// assertTrue( "one of the literals should be set to true",
-    	// 		Bool.TRUE == e.get(a.getVariable())  
-    	// 		|| Bool.TRUE == e.get(b.getVariable())	);
+    	assertTrue( "one of the literals should be set to true",
+    			Bool.TRUE == e.get(a.getVariable())  
+    			|| Bool.TRUE == e.get(b.getVariable())	);
     	
     }
     
     
     public void testSATSolver2(){
     	// (~a)
-    	// Environment e = SATSolver.solve(makeFm(makeCl(na)));
-    	// assertEquals( Bool.FALSE, e.get(na.getVariable()));
+    	HashMap<Variable, Bool> e = SATSolver.solve(makeFm(makeCl(na)));
+    	assertEquals( Bool.FALSE, e.get(na.getVariable()));
     }
     
     private static Formula makeFm(Clause... e) {
