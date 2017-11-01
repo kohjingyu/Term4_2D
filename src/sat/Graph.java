@@ -19,6 +19,7 @@ public class Graph {
 	private HashMap<Literal, Boolean> satisfiability = new HashMap<>();
 	private ArrayList<HashMap<Literal, Boolean>> SCC = new ArrayList<>(); // All vertices in the graph
 	private Stack<Literal> S = new Stack<>();
+	private ArrayList<Literal> singleClause = new ArrayList<>();
 	private boolean satisfiable;
 
 	public Graph(Formula formula) {
@@ -38,8 +39,12 @@ public class Graph {
 				// Add vertex
 				satisfiability.put(lit,null);
 				satisfiability.put(nLit,null);
-//				V.add(lit);
-//				V.add(nLit);
+				ArrayList<Literal> litAdj = adj.get(nLit);
+				if (litAdj == null){
+					litAdj = new ArrayList<Literal>();
+				}
+				litAdj.add(lit);
+				adj.put(nLit, litAdj);
 			}
 			else {
 				Iterator<Literal> iterator = c.iterator();
@@ -50,18 +55,18 @@ public class Graph {
 				Literal nSecondLit = secondLit.getNegation();
 
 				// Add literals to vertex array
-				satisfiability.put(firstLit, null);
-				satisfiability.put(nFirstLit, null);
-				satisfiability.put(secondLit, null);
-				satisfiability.put(nSecondLit, null);
+				satisfiability.putIfAbsent(firstLit, null);
+				satisfiability.putIfAbsent(nFirstLit, null);
+				satisfiability.putIfAbsent(secondLit, null);
+				satisfiability.putIfAbsent(nSecondLit, null);
 				
 
 				// For a clause (a OR b)
-				// Add edges ~a -> b and ~b -> a for each clause
+				// Add edges ~a -> b and ~b -> a for each clause to the adjacency hash map
 				ArrayList<Literal> firstLitAdj = adj.get(nFirstLit);
 				ArrayList<Literal> secondLitAdj = adj.get(nSecondLit);
 
-				// If the vertex has edges already, append. If it doesn't, initiate the ArrayList
+				// If the vertex has edges already, append. If it doesn't, initiate the ArrayList and append
 				if(firstLitAdj == null) {
 					firstLitAdj = new ArrayList<>();
 				}
@@ -79,7 +84,6 @@ public class Graph {
 	}
 	
 	public Graph(HashMap<Literal, Boolean> satisfiability){
-//		this.V = V;
 		this.satisfiability = satisfiability;
 	}
 
@@ -93,6 +97,9 @@ public class Graph {
 		}
 		ArrayList<Literal> neighbours = graph.adj.get(s); //Get the array list containing neighbours
 		if (neighbours == null){ //If there are no neighbours, end.
+			if (!S.contains(s) && !isSCC) {
+				S.push(s);
+			}
 			return;
 		}
 		for(Literal v : neighbours) {
@@ -105,19 +112,6 @@ public class Graph {
 			S.push(s);
 		}
 	}
-	
-//	public void DFS_visitSCC(Literal s) {
-//		SCC.add(s);
-//		ArrayList<Literal> adjVertices = this.adj.get(s);
-//		for(Literal v : adjVertices) {
-//			if(this.parent.get(v) == null) {
-//				this.parent.put(v, s);
-//				DFS_visitSCC(v);
-//
-//			}
-//		}
-		
-//	}
 
 	public void DFS(Graph graph, boolean isSCC) {
 		for(Literal s : this.satisfiability.keySet()) {
@@ -172,36 +166,38 @@ public class Graph {
 				}
 			}
 		}
+		//Print out the satisfiability
+		for (Literal lit : satisfiability.keySet()){
+			System.out.println("" + lit + satisfiability.get(lit));
+		}
 		System.out.println(SCC);
 		System.out.println(true);
-//		for (Literal lit : satisfiability.keySet()){
-//			System.out.println("" + lit + satisfiability.get(lit));
-//		}
 	}
 	
 
 	
 	public Graph getTranspose(){
-		Graph newGraph = new Graph(this.satisfiability);
-		HashMap<Literal, ArrayList<Literal>> adjTranspose = newGraph.getAdj();
-		for (Literal lit1 : this.satisfiability.keySet()){
-			ArrayList<Literal> neighbours = this.adj.get(lit1); //get the literals adjacent to lit1
+		Graph transposedGraph = new Graph(this.satisfiability);
+		HashMap<Literal, ArrayList<Literal>> adjTranspose = transposedGraph.getAdj();
+		for (Literal lit1 : this.satisfiability.keySet()){ //Traversing all vertices
+			ArrayList<Literal> neighbours = this.adj.get(lit1); //get List containing literals adjacent to lit1
 			if (neighbours != null) {
-				for (Literal lit2 : neighbours) { //iterate through the adjacent literals
+				for (Literal lit2 : neighbours) { //iterate through the list of adjacent literals
 					 // get the list storing the adjacent literals of lit2
 					ArrayList<Literal> lit2adj = adjTranspose.get(lit2);
 					if (lit2adj == null) { //If it doesn't exist, initialise
 						lit2adj = new ArrayList<>();
-						lit2adj.add(lit1);
-						adjTranspose.put(lit2, lit2adj);
-					} else {
-						lit2adj.add(lit1);
 					}
+					lit2adj.add(lit1);
+					adjTranspose.put(lit2, lit2adj);
 				}
 			}
+			else {
+				//do nothing
+			}
 		}
-//		newGraph.display();
-		return newGraph;
+//		transposedGraph.display();
+		return transposedGraph;
 		
 	}
 	
