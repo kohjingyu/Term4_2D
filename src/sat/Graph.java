@@ -30,7 +30,6 @@ public class Graph {
 			}
 			else if(c.size() == 0) {
 				// Trivial case: false
-				// TODO: Return false
 				satisfiable = false;
 			}
 			else if(c.size() == 1) {
@@ -164,35 +163,49 @@ public class Graph {
 	
 	public Graph getTranspose(){
 		Graph newGraph = new Graph(this.satisfiability);
+		// Loop through all vertices in this graph
 		for (Literal lit1 : this.satisfiability.keySet()){
-			ArrayList<Literal> adjacency = this.adj.get(lit1);
-			for (Literal lit2 : adjacency){
-				ArrayList<Literal> lit2adj = newGraph.adj.get(lit2);
-				if ( lit2adj == null) {
-					lit2adj = new ArrayList<Literal>();
-					lit2adj.add(lit2);
+			// Find neighbours of vertex lit1
+			ArrayList<Literal> neighoburs = this.adj.get(lit1);
+
+			// For each neighbour, set it as a vertex
+			for (Literal lit2 : neighoburs){
+				HashMap<Literal, ArrayList<Literal>> newAdj = newGraph.getAdj();
+				ArrayList<Literal> newNeighbours = newAdj.get(lit2);
+
+				// Initialize
+				if (newNeighbours == null) {
+					newNeighbours = new ArrayList<Literal>();
+					newNeighbours.add(lit1);
 				}
 				else {
-					lit2adj.add(lit2);
+					// Add as neighbour
+					newNeighbours.add(lit1);
 				}
+
+				newAdj.put(lit2, newNeighbours);
 			}
 		}
 		return newGraph;
 	}
 
 	public void display() {
-//		for(Literal lit : adj.keySet()) {
-//			System.out.print(lit + ": ");
-//
-//			for(Literal v : adj.get(lit)) {
-//				System.out.print(v + ", ");
-//			}
-//			System.out.println();
-//		}
-		for (Literal lit : satisfiability.keySet()){
-			System.out.println(satisfiability.get(lit));
-		}
+		for(Literal lit : adj.keySet()) {
+			System.out.print(lit + ": ");
 
+			for(Literal v : adj.get(lit)) {
+				System.out.print(v + ", ");
+			}
+			System.out.println();
+		}
+		// for (Literal lit : satisfiability.keySet()){
+		// 	System.out.println(satisfiability.get(lit));
+		// }
+
+	}
+
+	public HashMap<Literal, ArrayList<Literal>> getAdj() {
+		return this.adj;
 	}
 }
 
