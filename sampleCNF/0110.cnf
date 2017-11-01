@@ -1,0 +1,7 @@
+c (x1 or x2) and (x2 or x3) and (x3 or x4) and (not x1 or not x3) and (not x2 or not x4) expected answer: 0 1 1 0
+p cnf 4 5
+1 2 0
+2 3 0
+3 4 0
+-1 -3 0
+-2 -4 0

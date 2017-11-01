@@ -146,121 +146,131 @@ public class SATSolver {
     * but usually does with high probability. Performs 100n^2 tries before giving up.
     **/
 
-    public static Environment solveRandom(Formula formula, int numVariables) {
+    public static HashMap<String, Bool> solveRandom(Formula formula, int numVariables, int degree) {
         // Find all variables
-        Environment env = new Environment();
-        long maxTries = 100L * numVariables * numVariables;
-        System.out.println(maxTries);
-        return SATSolver.randomWalkify(formula, env, maxTries);
-    }
-
-    public static Environment randomWalkify(Formula formula, Environment env, long triesLeft) {
-        // If we exceed the number of tries, stop and return null (no answer found)
-        System.out.println(triesLeft);
-        if(triesLeft <= 0) {
+        if(degree <= 2) {
+            HashMap<String, Bool> env = new HashMap<String, Bool>();
+            long maxTries = 100L * numVariables * numVariables;
+            return SATSolver.randomWalkify(formula, env, maxTries);
+        }
+        else {
+            System.out.println("Not a 2SAT problem!");
             return null;
         }
+    }
 
-        // Find ONE unsatisfied clause
-        ImList<Clause> unsatClauses = new EmptyImList();
-        for(Clause c: formula.getClauses()) {
-            Iterator<Literal> litIter = c.iterator();
-            Literal f = litIter.next();
+    public static HashMap<String, Bool> randomWalkify(Formula formula, HashMap<String, Bool> env, long triesLeft) {
+        // If we exceed the number of tries, stop and return null (no answer found)
+        while(triesLeft > 0)
+        {
+            // Find ONE unsatisfied clause
+            Clause unsatClause = null;
+            // ImList<Clause> clauses = new EmptyImList();
+            for(Clause c: formula.getClauses()) {
+                Iterator<Literal> litIter = c.iterator();
+                Literal first = litIter.next();
 
-            if(f != null) {
-                // Check if first literal is false - if so, check second literal
-                Bool firstBool = f.getVariable().eval(env);
+                if(first != null) {
+                    // Check if first literal is false - if so, check second literal
+                    Variable firstVariable = first.getVariable();
+                    Bool firstBool = env.get(firstVariable.getName());
 
-                if(f instanceof NegLiteral && firstBool != Bool.FALSE || f instanceof PosLiteral && firstBool != Bool.TRUE) {
-                    // First not satisfied
-                    Literal second = litIter.next();
-                    if(second == null) {
-                        // Clause not satisfied
-                        unsatClauses = unsatClauses.add(c);
-                        break; // break because we just need one unsatisfied clause
-                    }
-                    else {
-                        Bool secondBool = second.getVariable().eval(env);
-                        if(second instanceof NegLiteral && secondBool != Bool.FALSE || second instanceof PosLiteral && secondBool != Bool.TRUE) {
+                    if(first instanceof NegLiteral && firstBool != Bool.FALSE || first instanceof PosLiteral && firstBool != Bool.TRUE) {
+                        // First not satisfied
+                        Literal second = litIter.next();
+                        if(second == null) {
                             // Clause not satisfied
-                            unsatClauses = unsatClauses.add(c);
+                            unsatClause = c;
+                            // clauses = clauses.add(c);
                             break; // break because we just need one unsatisfied clause
+                        }
+                        else {
+                            Variable secondVariable = second.getVariable();
+                            Bool secondBool = env.get(secondVariable.getName());
+
+                            if(second instanceof NegLiteral && secondBool != Bool.FALSE || second instanceof PosLiteral && secondBool != Bool.TRUE) {
+                                // Clause not satisfied
+                                unsatClause = c;
+                                // clauses = clauses.add(c);
+                                break; // break because we just need one unsatisfied clause
+                            }
                         }
                     }
                 }
+                else {
+                    // Empty clause - unsolvable
+                    return null;
+                }
             }
-            else {
-                // Empty clause - unsolvable
-                return null;
+
+            if(unsatClause == null) {
+                // All clauses satisfied! Hooray!
+                return env;
             }
-        }
 
-        System.out.println(unsatClauses);
+            // Guarenteed to have at least one literal
 
-        // Find unsatisfied clauses
-        ImList<Clause> clauses = unsatClauses; // TODO: Remove
-        if(clauses.size() == 0) {
-            // All clauses satisfied! Hooray!
-            return env;
-        }
+            Iterator<Literal> litIter = unsatClause.iterator();
+            Literal firstLit = litIter.next();
+            Variable firstVar = firstLit.getVariable();
+            Bool firstBool = env.get(firstVar.getName());
 
-        Clause c = clauses.first(); // Guarenteed to have at least one literal
+            Literal secondLit = litIter.next();
+            Bool secondBool = null;
+            Variable secondVar = null;
 
-        Iterator<Literal> litIter = c.iterator();
-        Literal firstLit = litIter.next();
-        Variable firstVar = firstLit.getVariable();
-        Bool firstBool = firstVar.eval(env);
+            if(secondLit != null)
+            {
+                secondVar = secondLit.getVariable();
+                secondBool = env.get(secondVar.getName());
 
-        Literal secondLit = litIter.next();
-        Bool secondBool = null;
-        Variable secondVar = null;
-
-        if(secondLit != null)
-        {
-            secondVar = secondLit.getVariable();
-            secondBool = secondVar.eval(env);
-        }
-
-        if(firstBool == Bool.UNDEFINED) {
-            firstBool = Bool.FALSE;
-            env = env.put(firstVar, Bool.FALSE);
-        }
-
-        if(secondBool == Bool.UNDEFINED) {
-            secondBool = Bool.FALSE;
-            env = env.put(secondVar, Bool.FALSE);
-        }
-
-        // Unsatisfied clause - change one variable randomly
-        Variable varToChange = firstVar;
-        Literal literalToChange = firstLit;
-        Bool boolToSet = firstBool.not();
-
-        // If this Clause has 2 variables, pick one at random to change
-        if(secondLit != null) {
-            Random rand = new Random();
-            int randNum = rand.nextInt(2);
-
-            if(randNum == 1) {
-                varToChange = secondVar;
-                literalToChange = secondLit;
-                boolToSet = secondBool.not();
+                if(secondBool == null) {
+                    secondBool = Bool.FALSE;
+                    env.put(secondVar.getName(), Bool.FALSE);
+                }
             }
+
+            if(firstBool == null) {
+                firstBool = Bool.FALSE;
+                env.put(firstVar.getName(), Bool.FALSE);
+            }
+
+            // Unsatisfied clause - change one variable randomly
+            Variable varToChange = firstVar;
+            Literal literalToChange = firstLit;
+            Bool boolToSet = firstBool.not();
+
+            // If this Clause has 2 variables, pick one at random to change
+            if(secondLit != null) {
+                Random rand = new Random();
+                int randNum = rand.nextInt(2);
+
+                if(randNum == 1) {
+                    varToChange = secondVar;
+                    literalToChange = secondLit;
+                    boolToSet = secondBool.not();
+                }
+            }
+
+            // System.out.println(env);
+            env.put(varToChange.getName(), boolToSet);
+            // System.out.println(unsatClauses);
+            // System.out.println(varToChange + " " + boolToSet);
+
+            triesLeft -= 1;
+
+            // return randomWalkify(formula, env, triesLeft - 1);
+
+            // Iterator<Clause> clauseIter = formula.iterator();
+            // Clause c = clauseIter.next();
+            // while(c != null)
+            // {
+
+            //     c = clauseIter.next();
+            // }
         }
 
-        env = env.put(varToChange, boolToSet);
-        // System.out.println(unsatClauses);
-        // System.out.println(varToChange + " " + boolToSet);
-
-        return randomWalkify(formula, env, triesLeft - 1);
-
-        // Iterator<Clause> clauseIter = formula.iterator();
-        // Clause c = clauseIter.next();
-        // while(c != null)
-        // {
-
-        //     c = clauseIter.next();
-        // }
+        return null;
     }
 
 }
