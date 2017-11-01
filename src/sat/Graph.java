@@ -140,7 +140,7 @@ public class Graph {
 	public void DFS_visit(Graph graph, Literal s, boolean isSCC) {
 		if (isSCC) { //Check if we are finding SCC
 			HashMap<Literal, Bool> innerSCC = SCC.get(SCC.size() - 1); //get the hashmap for the SCC
-			innerSCC.put(s, null); //insert literal to the hashmap
+			innerSCC.put(s, Bool.UNDEFINED); //insert literal to the hashmap
 		}
 
 		ArrayList<Literal> neighbours = graph.getAdj().get(s); //Get the array list containing neighbours

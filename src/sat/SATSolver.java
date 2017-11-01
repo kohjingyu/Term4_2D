@@ -45,7 +45,6 @@ public class SATSolver {
         }
     }
 
-
     /**
      * Takes a partial assignment of variables to values, and recursively
      * searches for a complete satisfying assignment.
