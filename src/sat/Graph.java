@@ -147,7 +147,7 @@ public class Graph {
 			HashMap<Literal, Boolean> innerSCC = SCC.get(i);
 			for (Literal lit : innerSCC.keySet()) {
 				if (satisfiability.get(lit) == null) {
-					if (innerSCC.get(lit.getNegation()) != null) {
+					if (innerSCC.get(lit.getNegation()) != null) { //Check for contradiction
 						System.out.println(false);
 					} else {
 						satisfiability.put(lit, true);
@@ -181,14 +181,18 @@ public class Graph {
 	}
 
 	public void display() {
-		for(Literal lit : adj.keySet()) {
-			System.out.print(lit + ": ");
-
-			for(Literal v : adj.get(lit)) {
-				System.out.print(v + ", ");
-			}
-			System.out.println();
+//		for(Literal lit : adj.keySet()) {
+//			System.out.print(lit + ": ");
+//
+//			for(Literal v : adj.get(lit)) {
+//				System.out.print(v + ", ");
+//			}
+//			System.out.println();
+//		}
+		for (Literal lit : satisfiability.keySet()){
+			System.out.println(satisfiability.get(lit));
 		}
+
 	}
 }
 
