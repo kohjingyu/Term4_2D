@@ -31,6 +31,21 @@ public class SATSolver {
         return solve(clauses, env);
     }
 
+    public static HashMap<Variable, Bool> solve(Formula formula, int degree) {
+        // 2SAT problem or lower - solve with SCC
+        if(degree <= 2) {
+            Graph graph = new Graph(formula);
+            return graph.solve();
+        }
+        else {
+            // Otherwise, solve with DPLL
+            HashMap<Variable, Bool> env = new HashMap<Variable, Bool>();
+            ImList<Clause> clauses = formula.getClauses();
+            return solve(clauses, env);
+        }
+    }
+
+
     /**
      * Takes a partial assignment of variables to values, and recursively
      * searches for a complete satisfying assignment.

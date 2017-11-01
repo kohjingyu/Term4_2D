@@ -3,10 +3,8 @@ package sat;
 import immutable.ImList;
 import immutable.ImMap;
 
-import sat.env.Bool;
-import sat.formula.Clause;
-import sat.formula.Formula;
-import sat.formula.Literal;
+import sat.env.*;
+import sat.formula.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,13 +19,13 @@ Otherwise it is satisfiable
  */
 
 public class Graph {
-	public HashMap<Literal, ArrayList<Literal>> adj = new HashMap<>(); // Adjacency list
-	public HashMap<Literal, Literal> parent = new HashMap<>();
-	private HashMap<Literal, Boolean> satisfiability = new HashMap<>();
-	private ArrayList<HashMap<Literal, Boolean>> SCC = new ArrayList<>(); // All vertices in the graph
+	private HashMap<Literal, ArrayList<Literal>> adj = new HashMap<>(); // Adjacency list
+	private HashMap<Literal, Literal> parent = new HashMap<>();
+	private HashMap<Literal, Bool> satisfiability = new HashMap<>();
+	private ArrayList<HashMap<Literal, Bool>> SCC = new ArrayList<>(); // All vertices in the graph
 	private Stack<Literal> S = new Stack<>();
 	private ArrayList<Literal> singleClause = new ArrayList<>();
-	private boolean satisfiable;
+	private boolean satisfiable = true; // Assume satisfiable
 
 	public Graph(Formula formula) {
 		for(Clause c : formula.getClauses()) {
@@ -38,6 +36,7 @@ public class Graph {
 			else if(c.size() == 0) {
 				// Trivial case: false
 				satisfiable = false;
+				break;
 			}
 			else if(c.size() == 1) {
 				//Clause (lit) is equivalent to Clause (lit, lit)
@@ -92,32 +91,71 @@ public class Graph {
 		}
 	}
 	//Constructor for cloning a graph with the same vertex
-	public Graph(HashMap<Literal, Boolean> satisfiability){
+	public Graph(HashMap<Literal, Bool> satisfiability){
 		this.satisfiability = satisfiability;
 	}
 
+	public HashMap<Variable, Bool> solve(){
+		// Not satisfiable - due to trivial case of empty clauses
+		if(satisfiable == false) {
+			return null;
+		}
+
+		generateSCC();
+		//Reverse topological order --> From high to low
+		for (int i = SCC.size() - 1; i >= 0 ; i--) {
+			HashMap<Literal, Bool> innerSCC = SCC.get(i);
+			for (Literal lit : innerSCC.keySet()) {
+				//Check if the Literal is already marked
+				if (satisfiability.get(lit) == null) {
+					//Check for contradiction
+					if (innerSCC.containsKey(lit.getNegation())) {
+						satisfiable = false;
+						return null;
+					} else {
+						//Mark Literal as true and !Literal as false
+						satisfiability.put(lit, Bool.TRUE);
+						satisfiability.put(lit.getNegation(), Bool.FALSE);
+					}
+				}
+			}
+		}
+		//If no contradiction occurs, it is satisfiable
+		satisfiable = true;
+
+		// Process results
+		HashMap<Variable, Bool> posLitResults = new HashMap<Variable, Bool>();
+		for(Literal lit : satisfiability.keySet()) {
+			if(lit instanceof PosLiteral) {
+				posLitResults.put(lit.getVariable(), satisfiability.get(lit));
+			}
+		}
+
+		return posLitResults;
+	}
+	
 	
 	//Depth-First Search recursive.
 	//Counter is used during SCC DFS to separate SCC into several index in the array list
-	public void DFS_visit(Graph graph, int counter, Literal s, boolean isSCC) {
+	public void DFS_visit(Graph graph, Literal s, boolean isSCC) {
 		if (isSCC) { //Check if we are finding SCC
-			HashMap<Literal, Boolean> innerSCC = SCC.get(counter); //get the hashmap for the SCC
+			HashMap<Literal, Bool> innerSCC = SCC.get(SCC.size() - 1); //get the hashmap for the SCC
 			innerSCC.put(s, null); //insert literal to the hashmap
-//			System.out.println(s);
-//			System.out.println(innerSCC);
-//			System.out.println(SCC);
 		}
-		ArrayList<Literal> neighbours = graph.adj.get(s); //Get the array list containing neighbours
+
+		ArrayList<Literal> neighbours = graph.getAdj().get(s); //Get the array list containing neighbours
 		if (neighbours == null){ //If there are no neighbours, end.
 			if (!S.contains(s) && !isSCC) {
 				S.push(s);
 			}
 			return;
 		}
+
+		// Perform DFS on neighbours
 		for(Literal v : neighbours) {
-			if(graph.parent.get(v) == null) { //If the literal is already traversed, do nothing.
-				graph.parent.put(v, s);
-				DFS_visit(graph, counter, v, isSCC);
+			if(graph.getParent().get(v) == null) { //If the literal is already traversed, do nothing.
+				graph.getParent().put(v, s);
+				DFS_visit(graph, v, isSCC);
 			}
 		}
 		//Generate stack based on DFS finish time
@@ -126,14 +164,15 @@ public class Graph {
 		}
 	}
 
-	//Depth-First Search implementation.
-	//isSCC checks if this is normal DFS or DFS to find SCC
+	// Depth-First Search implementation.
+	// isSCC checks if this is normal DFS or DFS to find SCC
 	public void DFS(Graph graph, boolean isSCC) {
 		for(Literal s : this.satisfiability.keySet()) {
-			if(parent.get(s) == null) {
-				parent.put(s, s);
-				DFS_visit(graph,0, s, isSCC);
+			if(this.parent.get(s) == null) {
+				this.parent.put(s, s);
+				DFS_visit(graph, s, isSCC);
 			}
+
 			//Generate stack based on DFS finish time
 			if (!S.contains(s) && !isSCC) {
 				S.push(s);
@@ -145,22 +184,25 @@ public class Graph {
 	public Graph getTranspose(){
 		//Transpose the graph by flipping the direction of the edges
 		Graph transposedGraph = new Graph(this.satisfiability);
-		HashMap<Literal, ArrayList<Literal>> adjTranspose = transposedGraph.getAdj(); //get the adjacency hashmap of the transposed graph
-		for (Literal lit1 : this.satisfiability.keySet()){ //Traversing all vertices
+		// Get the adjacency list of the transposed graph
+		HashMap<Literal, ArrayList<Literal>> adjTranspose = transposedGraph.getAdj(); 
+		// Traverse all vertices
+		for (Literal lit1 : this.satisfiability.keySet()){ 
 			ArrayList<Literal> neighbours = this.adj.get(lit1); //get List containing literals adjacent to lit1
+
+			// If this vertex has any neighbours, add them to the transposed graph as vertices
 			if (neighbours != null) {
-				for (Literal lit2 : neighbours) { //iterate through the list of adjacent literals
+				// Iterate through neighbours
+				for (Literal lit2 : neighbours) { 
 					// get the list storing the adjacent literals of lit2
 					ArrayList<Literal> lit2adj = adjTranspose.get(lit2);
 					if (lit2adj == null) { //If it doesn't exist, initialise
 						lit2adj = new ArrayList<>();
 					}
+
 					lit2adj.add(lit1);
 					adjTranspose.put(lit2, lit2adj);
 				}
-			}
-			else {
-				//do nothing
 			}
 		}
 		return transposedGraph;
@@ -173,50 +215,28 @@ public class Graph {
 		//Clear SCC and Parent for second DFS
 		SCC.clear();
 		parent.clear();
-		//Counter represent the index of the current SCC that the DFS is in.
-		int counter = 0;
 		//Traverse through the vertex in topological order of graph G. Done by popping from DFS finish-time stack
 		while (!S.empty()){
 			Literal v = S.pop();
-			if (!transposedGraph.parent.containsKey(v)) {
-				transposedGraph.parent.put(v, v);
-				SCC.add(new HashMap<Literal, Boolean>()); //Allocate space for next SCC
-				DFS_visit(transposedGraph, counter, v, true);
-				counter++; //If DFS for a vertex is done, increase counter to move on to the next SCC
+			if (!transposedGraph.getParent().containsKey(v)) {
+				transposedGraph.getParent().put(v, v);
+				SCC.add(new HashMap<Literal, Bool>()); //Allocate space for next SCC
+				DFS_visit(transposedGraph, v, true);
 			}
 		}
 	}
 	
-	//Reverse topological order --> From counter high to low
-	public void solve(){
-		generateSCC();
-		for (int i = SCC.size() - 1; i >= 0 ; i--) {
-			HashMap<Literal, Boolean> innerSCC = SCC.get(i);
-			for (Literal lit : innerSCC.keySet()) {
-				//Check if the Literal is already marked
-				if (satisfiability.get(lit) == null) {
-					//Check for contradiction
-					if (innerSCC.containsKey(lit.getNegation())) {
-						satisfiable = false;
-						return;
-					} else {
-						//Mark Literal as true and !Literal as false
-						satisfiability.put(lit, true);
-						satisfiability.put(lit.getNegation(), false);
-					}
-				}
-			}
-		}
-		//If no contradiction occurs, it is satisfiable
-		satisfiable = true;
-	}
-	
+
 	public HashMap<Literal, ArrayList<Literal>> getAdj(){
 		return this.adj;
 	}
 
+	public HashMap<Literal, Literal> getParent() {
+		return this.parent;
+	}
+
 	public void display() {
-		//display the graph
+		// Display the graph as an adjacency list
 		for(Literal lit : adj.keySet()) {
 			System.out.print(lit + ": ");
 
@@ -225,16 +245,6 @@ public class Graph {
 			}
 			System.out.println();
 		}
-		//display the satisfiability assignment if it is satisfiable
-		if (satisfiable) {
-			for (Literal lit : satisfiability.keySet()) {
-				System.out.println("" + lit + satisfiability.get(lit));
-			}
-			System.out.println("Satisfiable");
-		} else {
-			System.out.println("Not Satisfiable");
-		}
-
 	}
 }
 
