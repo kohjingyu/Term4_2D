@@ -43,7 +43,7 @@ public class SATSolverTest {
         // System.out.println(solverRand.solve(makeFm(makeCl(a,b),makeCl(c,nb))));
 
         // Graph g = new Graph(makeFm(makeCl(a,b)));
-        // g.display();
+        // g.solve();
 
         // Read the .cnf file and calls SATSolver.solve to determine the satisfiability
         if(args.length == 0) {
