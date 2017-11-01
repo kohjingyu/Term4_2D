@@ -42,8 +42,9 @@ public class SATSolverTest {
         // SATSolver solverRand = new SATSolver();
         // System.out.println(solverRand.solve(makeFm(makeCl(a,b),makeCl(c,nb))));
 
-        // Graph g = new Graph(makeFm(makeCl(a,b)));
-        // g.solve();
+//         Graph g = new Graph(makeFm(makeCl(a,b)));
+//         g.solve();
+//         g.display();
 
         // Read the .cnf file and calls SATSolver.solve to determine the satisfiability
         if(args.length == 0) {
@@ -120,7 +121,7 @@ public class SATSolverTest {
                 Formula fm = makeFm(clauses);
                 Graph graph = new Graph(fm);
                 graph.solve();
-//                graph.display();
+                graph.display();
 //                SATSolver solver = new SATSolver();
 //                System.out.println(solver.solve(fm));
                 // System.out.println(solver.solveRandom(fm, numVariables));
