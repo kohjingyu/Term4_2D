@@ -2,6 +2,7 @@ package sat;
 
 import static org.junit.Assert.*;
 
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
@@ -12,6 +13,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import sat.env.*;
 import sat.formula.*;
@@ -127,13 +130,31 @@ public class SATSolverTest {
 
                 Formula fm = makeFm(clauses);
                 SATSolver solver = new SATSolver();
-                System.out.println(solver.solve(fm, degree));
-                
+                HashMap<Variable,Bool> results = solver.solve(fm, degree);
+
                 long time = System.nanoTime();
                 long timeTaken= time - started;
                 System.out.println("Time:" + timeTaken/1000000.0 + "ms");
 
-                // System.out.println("Number of variables: " + numVariables + ", number of clauses: " + numClauses);  
+                System.out.println("Printing out the results into file...");
+                PrintWriter writer = new PrintWriter(args[1]);
+                if(results == null){
+                    writer.println(results);
+                }else{
+                    Iterator it = results.entrySet().iterator();
+                    while(it.hasNext()){
+                        Map.Entry pair = (Map.Entry)it.next();
+                        writer.println(pair.getKey()+":"+pair.getValue());
+                        it.remove();
+                    }
+                }
+                writer.close();
+                System.out.println("Printing complete.");
+                
+//                long time = System.nanoTime();
+//                long timeTaken= time - started;
+//                System.out.println("Time:" + timeTaken/1000000.0 + "ms");
+
             }
             catch(IOException e){
                 System.out.println(e);
