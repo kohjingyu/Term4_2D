@@ -34,7 +34,7 @@ public class SATSolver {
     public static HashMap<Variable, Bool> solve(Formula formula, int degree) {
         // 2SAT problem or lower - solve with SCC
         if(degree <= 2) {
-            Graph graph = new Graph(formula);
+            Graph graph = new Graph(formula, degree);
             return graph.solve();
         }
         else {

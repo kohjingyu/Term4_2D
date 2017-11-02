@@ -32,24 +32,6 @@ public class SATSolverTest {
     Literal nc = c.getNegation();
 
     public static void main(String[] args) {
-        Literal a = PosLiteral.make("a");
-        Literal b = PosLiteral.make("b");
-        Literal c = PosLiteral.make("c");
-        Literal na = a.getNegation();
-        Literal nb = b.getNegation();
-        Literal nc = c.getNegation();
-
-        // SATSolverTest test = new SATSolverTest();
-        // test.testSATSolver1();
-        // test.testSATSolver2();
-
-        // SATSolver solverRand = new SATSolver();
-        // System.out.println(solverRand.solve(makeFm(makeCl(a,b),makeCl(c,nb))));
-
-//         Graph g = new Graph(makeFm(makeCl(a,b)));
-//         g.solve();
-//         g.display();
-
         // Read the .cnf file and calls SATSolver.solve to determine the satisfiability
         if(args.length == 0) {
             System.out.println("Error: please provide a cnf file.");
