@@ -26,11 +26,14 @@ public class Graph {
 	private Stack<Literal> S = new Stack<>();
 	private ArrayList<Literal> singleClause = new ArrayList<>();
 	private boolean satisfiable = true; // Assume satisfiable
+	private int numVariables = 0;
 
-	public Graph(Formula formula) {
+	public Graph(Formula formula, int numVariables) {
+		this.numVariables = numVariables;
 		for(Clause c : formula.getClauses()) {
 			if(c.size() > 2) {
 				System.out.println("Not a 2SAT problem!");
+				satisfiable = false;
 				break;
 			}
 			else if(c.size() == 0) {
@@ -67,7 +70,6 @@ public class Graph {
 				satisfiability.putIfAbsent(nFirstLit, null);
 				satisfiability.putIfAbsent(secondLit, null);
 				satisfiability.putIfAbsent(nSecondLit, null);
-				
 
 				// For a clause (a OR b)
 				// Add edges ~a -> b and ~b -> a for each clause to the adjacency hash map
@@ -145,7 +147,7 @@ public class Graph {
 
 		ArrayList<Literal> neighbours = graph.getAdj().get(s); //Get the array list containing neighbours
 		if (neighbours == null){ //If there are no neighbours, end.
-			if (!S.contains(s) && !isSCC) {
+			if (!isSCC) {
 				S.push(s);
 			}
 			return;
@@ -159,7 +161,7 @@ public class Graph {
 			}
 		}
 		//Generate stack based on DFS finish time
-		if (!S.contains(s) && !isSCC) {
+		if (!isSCC) {
 			S.push(s);
 		}
 	}
@@ -172,13 +174,7 @@ public class Graph {
 				this.parent.put(s, s);
 				DFS_visit(graph, s, isSCC);
 			}
-
-			//Generate stack based on DFS finish time
-			if (!S.contains(s) && !isSCC) {
-				S.push(s);
-			}
-		}
-		
+		}		
 	}
 	
 	public Graph getTranspose(){
